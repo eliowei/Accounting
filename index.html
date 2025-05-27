@@ -263,10 +263,9 @@
   </table>
 
   <div style="max-width: 960px; margin: 0 auto 24px;">
-    <input type="file" id="importExcel" accept=".xlsx,.xls" style="margin-bottom: 12px;" />
-    <button id="exportExcel"
-      style="background:#0077cc; color:#fff; font-weight:700; padding: 10px 16px; border:none; border-radius:4px; cursor:pointer;">匯出
-      Excel</button>
+    <input type="file" id="importExcel" accept=".xlsx,.xls" style="margin-bottom: 12px;display: none;" />
+    <button id="importBtn"
+      style="background:#0077cc; color:#fff; font-weight:700; padding: 10px 16px; border:none; border-radius:4px; cursor:pointer; margin-right: 8px;">選擇檔案</button>
     <button id="exportAllBtn"
       style="background:#0077cc; color:#fff; font-weight:700; padding: 10px 16px; border:none; border-radius:4px; cursor:pointer;">匯出所有月份資料</button>
     <button id="exportCurrentBtn"
@@ -285,7 +284,6 @@
     const tableBody = document.getElementById('recordTableBody');
     const footerTotal = document.getElementById('footerTotal');
     const importInput = document.getElementById('importExcel');
-    const exportBtn = document.getElementById('exportExcel');
     const dateInput = document.getElementById('date');
     const storeInput = document.getElementById('store');
     const buyerInput = document.getElementById('buyer');
@@ -297,6 +295,7 @@
     const orderNumberInput = document.getElementById("orderNumber");
     const noteInput = document.getElementById("note");
     const addBtn = document.getElementById('addRecord');
+    const importBtn = document.getElementById('importBtn');
     const roleFilter = document.getElementById('roleFilter');
     let currentRole = 'all'; // 預設全部
     let chart = null;
@@ -313,6 +312,11 @@
     }
     amountInput.addEventListener('input', updateTotal);
     quantityInput.addEventListener('input', updateTotal);
+    // 點擊按鈕時觸發檔案選擇
+    importBtn.addEventListener('click', () => {
+      importInput.click();
+    });
+
 
     // 產生月份選單 (過去一年，含當月)
     function generateMonthOptions() {
@@ -656,6 +660,7 @@
       // 每天檢查一次是否需要月份備份
       setInterval(autoBackupAndExport, 24 * 60 * 60 * 1000);
     });
+
 
   </script>
 
