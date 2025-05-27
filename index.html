@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>純前端記帳網頁 (Excel 匯入匯出 + 視覺化)</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 0 20px 40px;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 24px;
+      color: #004d99;
+    }
+
+    form {
+      max-width: 960px;
+      background: white;
+      margin: 24px auto 40px;
+      padding: 20px 24px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      align-items: center;
+    }
+
+    form label {
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: block;
+      color: #004d99;
+    }
+
+    form input,
+    form select,
+    form button {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 1rem;
+      border-radius: 4px;
+      border: 1.5px solid #ddd;
+      transition: border-color 0.3s ease;
+    }
+
+    form input:focus,
+    form select:focus {
+      border-color: #0077cc;
+      outline: none;
+    }
+
+    form button {
+      background-color: #0077cc;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: background-color 0.3s ease;
+    }
+
+    form button:hover {
+      background-color: #005fa3;
+    }
+
+    table {
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto 24px;
+      border-collapse: collapse;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    thead {
+      background-color: #004d99;
+      color: white;
+    }
+
+    thead th {
+      padding: 12px 8px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    tbody td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    tbody tr:hover {
+      background-color: #f0f8ff;
+    }
+
+    .deleteBtn {
+      background-color: #cc3300;
+      border: none;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background-color 0.3s ease;
+    }
+
+    .deleteBtn:hover {
+      background-color: #992600;
+    }
+
+    #chartContainer {
+      max-width: 960px;
+      margin: 0 auto 60px;
+      background: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
+    }
+
+    #monthSelect,
+    #roleFilter {
+      max-width: 120px;
+      margin: 0 16px 16px;
+      display: block;
+      padding: 8px 12px;
+      font-size: 1rem;
+      border-radius: 4px;
+      border: 1.5px solid #ddd;
+      cursor: pointer;
+      transition: border-color 0.3s ease;
+    }
+
+    #monthSelect:hover,
+    #monthSelect:focus {
+      border-color: #0077cc;
+      outline: none;
+    }
+
+    #roleFilter:hover,
+    #roleFilter:focus {
+      border-color: #0077cc;
+      outline: none;
+    }
+
+    @media (max-width: 600px) {
+      form {
+        grid-template-columns: 1fr;
+      }
+
+      thead th,
+      tbody td {
+        font-size: 0.8rem;
+        padding: 6px 4px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>記帳系統（支援 Excel 匯入/匯出 & 視覺化）</h1>
+
+  <form id="inputForm" onsubmit="return false;">
+    <div>
+      <label for="date">日期（必填）</label>
+      <input type="date" id="date" required />
+    </div>
+    <div>
+      <label for="store">店家/賣家名稱</label>
+      <input type="text" id="store" placeholder="選填" />
+    </div>
+    <div>
+      <label for="buyer">買家ID名稱</label>
+      <input type="text" id="buyer" placeholder="選填" />
+    </div>
+    <div class="mb-3">
+      <label for="productName" class="form-label">商品名稱</label>
+      <input type="text" class="form-control" id="productName" />
+    </div>
+    <div>
+      <label for="amount">金額（必填）</label>
+      <input type="number" id="amount" min="0" step="0.01" required />
+    </div>
+    <div>
+      <label for="quantity">數量（必填）</label>
+      <input type="number" id="quantity" min="0" step="1" required />
+    </div>
+    <div>
+      <label for="total">該筆總金額</label>
+      <input type="number" id="total" readonly />
+    </div>
+    <div class="mb-3">
+      <label for="orderType" class="form-label">訂單種類</label>
+      <select class="form-select" id="orderType">
+        <option value=""></option>
+        <option value="蝦皮">蝦皮</option>
+        <option value="賣貨便">賣貨便</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="orderNumber" class="form-label">訂單編號</label>
+      <input type="text" class="form-control" id="orderNumber" />
+    </div>
+    <div class="mb-3">
+      <label for="note" class="form-label">備註</label>
+      <textarea class="form-control" id="note" rows="2"></textarea>
+    </div>
+    <div style="align-self: flex-end;">
+      <button id="addRecord" type="submit">新增記錄</button>
+    </div>
+  </form>
+
+  <div style="max-width:960px; margin: 0 auto 16px; display:flex;">
+    <label for="monthSelect" style="font-weight:600; color:#004d99;">選擇月份：</label>
+    <select id="monthSelect"></select>
+    <select id="roleFilter">
+      <option value="all">全部</option>
+      <option value="store">店家/賣家</option>
+      <option value="buyer">買家</option>
+    </select>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>日期</th>
+        <th>店家/賣家名稱</th>
+        <th>買家ID名稱</th>
+        <th>商品名稱</th>
+        <th>金額</th>
+        <th>數量</th>
+        <th>該筆總金額</th>
+        <th>訂單種類</th>
+        <th>訂單編號</th>
+        <th>備註</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="recordTableBody"></tbody>
+    <tfoot>
+      <tr style="font-weight:bold; background:#eef4fc;">
+        <td colspan="6" style="text-align:right;">總計</td>
+        <td id="footerTotal">0</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div style="max-width: 960px; margin: 0 auto 24px;">
+    <input type="file" id="importExcel" accept=".xlsx,.xls" style="margin-bottom: 12px;" />
+    <button id="exportExcel"
+      style="background:#0077cc; color:#fff; font-weight:700; padding: 10px 16px; border:none; border-radius:4px; cursor:pointer;">匯出
+      Excel</button>
+    <button id="exportAllBtn"
+      style="background:#0077cc; color:#fff; font-weight:700; padding: 10px 16px; border:none; border-radius:4px; cursor:pointer;">匯出所有月份資料</button>
+    <button id="exportCurrentBtn"
+      style="background:#0077cc; color:#fff; font-weight:700; padding: 10px 16px; border:none; border-radius:4px; cursor:pointer;">匯出目前月份資料</button>
+  </div>
+
+  <div id="chartContainer">
+    <canvas id="dailyChart"></canvas>
+  </div>
+
+  <script>
+    const recordsKey = 'records';
+    let records = JSON.parse(localStorage.getItem(recordsKey)) || [];
+    let currentMonth = new Date().toISOString().slice(0, 7);
+    const monthSelect = document.getElementById('monthSelect');
+    const tableBody = document.getElementById('recordTableBody');
+    const footerTotal = document.getElementById('footerTotal');
+    const importInput = document.getElementById('importExcel');
+    const exportBtn = document.getElementById('exportExcel');
+    const dateInput = document.getElementById('date');
+    const storeInput = document.getElementById('store');
+    const buyerInput = document.getElementById('buyer');
+    const amountInput = document.getElementById('amount');
+    const quantityInput = document.getElementById('quantity');
+    const totalInput = document.getElementById('total');
+    const productNameInput = document.getElementById("productName");
+    const orderTypeInput = document.getElementById("orderType");
+    const orderNumberInput = document.getElementById("orderNumber");
+    const noteInput = document.getElementById("note");
+    const addBtn = document.getElementById('addRecord');
+    const roleFilter = document.getElementById('roleFilter');
+    let currentRole = 'all'; // 預設全部
+    let chart = null;
+
+    // 計算該筆總金額
+    function updateTotal() {
+      const amount = parseFloat(amountInput.value);
+      const quantity = parseInt(quantityInput.value);
+      if (!isNaN(amount) && !isNaN(quantity)) {
+        totalInput.value = (amount * quantity);
+      } else {
+        totalInput.value = '';
+      }
+    }
+    amountInput.addEventListener('input', updateTotal);
+    quantityInput.addEventListener('input', updateTotal);
+
+    // 產生月份選單 (過去一年，含當月)
+    function generateMonthOptions() {
+      const now = new Date();
+      const months = [];
+      monthSelect.innerHTML = ''; // 清空原先選項
+
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0'); // 月份補零
+        const ym = `${year}-${month}`;
+        months.push(ym);
+      }
+
+      months.forEach(ym => {
+        const opt = document.createElement('option');
+        opt.value = ym;
+        opt.textContent = ym;
+        if (ym === currentMonth) opt.selected = true;
+        monthSelect.appendChild(opt);
+      });
+    }
+
+    // 顯示該月資料
+    function renderTable(month) {
+      tableBody.innerHTML = '';
+      // 先以月份過濾
+      let filtered = records.filter(r => typeof r.date === 'string' && r.date.startsWith(month));
+
+      // 再依照角色篩選
+      if (currentRole === 'buyer') {
+        filtered = filtered.filter(r => r.buyer && r.buyer.trim() !== '');
+      } else if (currentRole === 'store') {
+        filtered = filtered.filter(r => r.store && r.store.trim() !== '');
+      }
+
+      let sum = 0;
+      filtered.forEach((rec, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+      <td>${rec.date}</td>
+      <td>${rec.store || ''}</td>
+      <td>${rec.buyer || ''}</td>
+      <td>${rec.productName || ''}</td>
+      <td>${rec.amount}</td>
+      <td>${rec.quantity}</td>
+      <td>${rec.total}</td>
+      <td>${rec.orderType}</td>
+      <td>${rec.orderNumber}</td>
+      <td>${rec.note}</td>
+      <td><button class="deleteBtn" data-index="${records.indexOf(rec)}">刪除</button></td>
+    `;
+        tableBody.appendChild(tr);
+        sum += rec.total;
+      });
+      footerTotal.textContent = sum;
+      renderChart(filtered, month);
+    }
+
+
+    // 新增記錄
+    function addRecord() {
+      const date = dateInput.value;
+      const store = storeInput.value.trim();
+      const buyer = buyerInput.value.trim();
+      const amount = parseFloat(amountInput.value);
+      const quantity = parseInt(quantityInput.value);
+      const total = amount * quantity;
+      const productName = productNameInput.value
+      const orderType = orderTypeInput.value
+      const orderNumber = orderNumberInput.value
+      const note = noteInput.value
+
+      if (!date) {
+        alert('請填寫日期');
+        return;
+      }
+
+      // 新增買家/賣家驗證
+      if ((!store && !buyer) || (store && buyer)) {
+        alert('請填寫買家或賣家其中一個欄位（不可同時填寫或同時空白）');
+        return;
+      }
+
+      if (isNaN(amount) || amount < 0) {
+        alert('請填寫正確金額');
+        return;
+      }
+      if (isNaN(quantity) || quantity < 0) {
+        alert('請填寫正確數量');
+        return;
+      }
+      const newRec = { date, store, buyer, productName, amount, quantity, total, orderType, orderNumber, note };
+      records.push(newRec);
+      saveRecords();
+      clearForm();
+      currentMonth = date.slice(0, 7);
+      monthSelect.value = currentMonth;
+      renderTable(currentMonth);
+    }
+
+    // 新增即時驗證功能
+    function validateInputs() {
+      const store = storeInput.value.trim();
+      const buyer = buyerInput.value.trim();
+
+      if (store) {
+        buyerInput.disabled = true;
+        buyerInput.placeholder = "已填寫賣家";
+      } else {
+        buyerInput.disabled = false;
+        buyerInput.placeholder = "選填";
+      }
+
+      if (buyer) {
+        storeInput.disabled = true;
+        storeInput.placeholder = "已填寫買家";
+      } else {
+        storeInput.disabled = false;
+        storeInput.placeholder = "選填";
+      }
+    }
+
+    // 刪除記錄
+    function deleteRecord(index) {
+      if (!confirm('確定要刪除此筆記錄？')) return;
+      records.splice(index, 1);
+      saveRecords();
+      renderTable(currentMonth);
+    }
+
+    // 清空表單
+    function clearForm() {
+      dateInput.value = '';
+      storeInput.value = '';
+      buyerInput.value = '';
+      amountInput.value = '';
+      quantityInput.value = '';
+      totalInput.value = '';
+      productNameInput.value = '';
+      orderTypeInput.value = '';
+      orderNumberInput.value = '';
+      noteInput.value = '';
+    }
+
+    // 儲存至 localStorage
+    function saveRecords() {
+      localStorage.setItem(recordsKey, JSON.stringify(records));
+      // 每次儲存資料時檢查是否需要月份備份
+      autoBackupAndExport();
+    }
+    // 匯入 Excel 檔案
+    // 匯入 Excel 檔案
+    importInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+
+        // 解析 Excel 內容，取得 JSON 陣列
+        const importedData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+        // 將匯入資料轉成符合 records 格式
+        importedData.forEach(item => {
+          // 注意欄位名稱需對應你的 Excel 結構
+          const date = item['日期'] || '';
+          const store = item['店家/賣家名稱'] || '';
+          const buyer = item['買家ID名稱'] || '';
+          const productName = item['商品名稱'] || '';
+          const amount = parseFloat(item['金額']) || 0;
+          const quantity = parseInt(item['數量']) || 0;
+          const total = parseFloat(item['該筆總金額']) || (amount * quantity);
+          const orderType = item['訂單種類'] || '';
+          const orderNumber = item['訂單編號'] || '';
+          const note = item['備註'] || '';
+
+          if (date) {
+            records.push({ date, store, buyer, productName, amount, quantity, total, orderType, orderNumber, note });
+          }
+        });
+
+        saveRecords();
+        currentMonth = monthSelect.value || new Date().toISOString().slice(0, 7);
+        renderTable(currentMonth);
+
+        alert('匯入完成！');
+        importInput.value = ''; // 清空檔案欄位
+      };
+
+      reader.readAsArrayBuffer(file);
+    });
+    // 匯出 Excel 檔案
+    // 匯出函式
+    function exportRecords(data, fileName) {
+      if (data.length === 0) {
+        alert('目前沒有記錄可匯出');
+        return;
+      }
+
+      const exportData = data.map(item => ({
+        '日期': item.date,
+        '店家/賣家名稱': item.store,
+        '買家ID名稱': item.buyer,
+        '商品名稱': item.productName || '',      // 新增欄位
+        '金額': item.amount,
+        '數量': item.quantity,
+        '該筆總金額': item.total,
+        '訂單類型': item.orderType || '',        // 新增欄位
+        '訂單編號': item.orderNumber || '',      // 新增欄位
+        '備註': item.note || '',                  // 新增欄位
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData, {
+        header: ['日期', '店家/賣家名稱', '買家ID名稱', '商品名稱', '金額', '數量', '該筆總金額', '訂單類型', '訂單編號', '備註']
+      });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '記帳資料');
+      XLSX.writeFile(wb, fileName);
+      alert('成功匯出')
+    }
+
+    // 兩個按鈕事件
+    document.getElementById('exportAllBtn').addEventListener('click', () => {
+      let dataToExport = records;
+      if (currentRole === 'buyer') {
+        dataToExport = records.filter(r => r.buyer && r.buyer.trim() !== '');
+      } else if (currentRole === 'store') {
+        dataToExport = records.filter(r => r.store && r.store.trim() !== '');
+      }
+      exportRecords(dataToExport, '所有月份記帳資料.xlsx');
+    });
+
+    document.getElementById('exportCurrentBtn').addEventListener('click', () => {
+      let filtered = records.filter(r => typeof r.date === 'string' && r.date.startsWith(currentMonth));
+      if (currentRole === 'buyer') {
+        filtered = filtered.filter(r => r.buyer && r.buyer.trim() !== '');
+      } else if (currentRole === 'store') {
+        filtered = filtered.filter(r => r.store && r.store.trim() !== '');
+      }
+      exportRecords(filtered, `${currentMonth} 記帳資料.xlsx`);
+    });
+    // 繪製圖表
+    function renderChart(filteredRecords, month) {
+      const ctx = document.getElementById('dailyChart').getContext('2d');
+
+      // 依日期彙總總金額
+      const dailyTotals = {};
+      filteredRecords.forEach(rec => {
+        dailyTotals[rec.date] = (dailyTotals[rec.date] || 0) + rec.total;
+      });
+
+      // 按日期排序
+      const labels = Object.keys(dailyTotals).sort();
+      const data = labels.map(date => dailyTotals[date]);
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: `${month} 每日總金額`,
+            data,
+            backgroundColor: 'rgba(0, 119, 204, 0.6)'
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // 初始化
+    generateMonthOptions();
+    renderTable(currentMonth);
+
+    // 事件綁定
+    addBtn.addEventListener('click', addRecord);
+    monthSelect.addEventListener('change', e => {
+      currentMonth = e.target.value;
+      renderTable(currentMonth);
+    });
+    tableBody.addEventListener('click', e => {
+      if (e.target.classList.contains('deleteBtn')) {
+        const idx = parseInt(e.target.dataset.index);
+        deleteRecord(idx);
+      }
+    });
+    roleFilter.addEventListener('change', e => {
+      currentRole = e.target.value;
+      renderTable(currentMonth);
+    });
+    storeInput.addEventListener('input', validateInputs);
+    buyerInput.addEventListener('input', validateInputs);
+
+    // 自動備份函數
+    function autoBackupAndExport() {
+      const now = new Date();
+      const lastBackupMonth = localStorage.getItem('lastBackupMonth');
+      const currentMonth = now.toISOString().slice(0, 7);  // 格式: YYYY-MM
+
+      // 檢查是否需要本月備份
+      if (lastBackupMonth !== currentMonth) {
+        // 建立備份檔名
+        const fileName = `記帳備份_${currentMonth}.xlsx`;
+
+        // 檢查是否有資料需要備份
+        if (records && records.length > 0) {
+          try {
+            exportRecords(records, fileName);
+            console.log(`${currentMonth} 月份備份完成`);
+            // 更新最後備份月份
+            localStorage.setItem('lastBackupMonth', currentMonth);
+          } catch (error) {
+            console.error('月份備份失敗:', error);
+          }
+        } else {
+          console.log('無資料需要備份');
+        }
+      }
+    }
+
+    // 修改網頁載入事件
+    window.addEventListener('load', () => {
+      // 延遲 3 秒後執行第一次檢查
+      setTimeout(autoBackupAndExport, 3000);
+
+      // 每天檢查一次是否需要月份備份
+      setInterval(autoBackupAndExport, 24 * 60 * 60 * 1000);
+    });
+
+  </script>
+
+</body>
+
+</html>
