@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>純前端記帳網頁 (Excel 匯入匯出 + 視覺化)</title>
+  <title>記帳網頁</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -235,7 +235,7 @@
 
 <body>
 
-  <h1>記帳系統（支援 Excel 匯入/匯出 & 視覺化）</h1>
+  <h1>記帳網頁</h1>
 
   <form id="inputForm" onsubmit="return false;">
     <div>
@@ -391,7 +391,7 @@
     let currentRole = 'all'; // 預設全部
     let currentChartType = 'bar'; // 預設為長條圖
     let chart = null;
-    let editingIndex = -1; // 新增變數追蹤正在編輯的記錄索引
+    let editingIndex = -1; // 編輯的記錄索引
 
     // 計算該筆總金額
     function updateTotal() {
@@ -487,7 +487,7 @@
       renderChart(filtered);
     }
 
-    // 新增編輯函數
+    // 編輯
     function editRecord(index) {
       editingIndex = index;
       const record = records[index];
@@ -518,7 +518,6 @@
 
 
     // 新增記錄
-    // 修改 addRecord 函數
     function addRecord() {
       const date = dateInput.value;
       const store = storeInput.value.trim();
@@ -564,7 +563,6 @@
         addBtn.textContent = '新增記錄';
         alert('修改成功');
       } else {
-        // 新增記錄
         records.push(newRecord);
         alert('新增記錄成功');
       }
@@ -575,7 +573,7 @@
     }
 
 
-    // 新增即時驗證功能
+    // 即時驗證功能
     function validateInputs() {
       const store = storeInput.value.trim();
       const buyer = buyerInput.value.trim();
@@ -657,7 +655,6 @@
       autoBackupAndExport();
     }
     // 匯入 Excel 檔案
-    // 修改匯入部分的程式碼
     importInput.addEventListener('change', e => {
       const file = e.target.files[0];
       if (!file) return;
@@ -733,9 +730,9 @@
       reader.readAsArrayBuffer(file);
     });
 
-    // 新增複合識別碼生成函數
+    // 複合識別碼生成
     function createRecordKey(record) {
-      // 可以自訂組合多個欄位作為識別碼
+      // 自訂組合多個欄位作為識別碼
       const keyParts = [
         record.date,
         record.store || '',
@@ -786,14 +783,12 @@
       alert('成功匯出');
     }
 
-    // 新增取消按鈕事件監聽
+    // 取消按鈕事件監聽
     cancelEditBtn.addEventListener('click', () => {
       clearForm();
       cancelEditBtn.style.display = 'none';
     });
 
-
-    // 兩個按鈕事件
     document.getElementById('exportAllBtn').addEventListener('click', () => {
       let dataToExport = records;
       if (currentRole === 'buyer') {
@@ -958,7 +953,7 @@
       chart = new Chart(ctx, chartConfig);
     }
 
-    // 新增圖表切換按鈕事件監聽
+    // 圖表切換按鈕事件監聽
     document.querySelectorAll('.chartTypeBtn').forEach(btn => {
       btn.addEventListener('click', () => {
         // 更新按鈕樣式
@@ -988,9 +983,8 @@
     initializeDateRange();
     renderTable();
 
-    // 事件綁定
     addBtn.addEventListener('click', addRecord);
-    // 新增事件監聽器
+    // 開始、結束日期事件監聽器
     startDateInput.addEventListener('change', renderTable);
     endDateInput.addEventListener('change', renderTable);
 
@@ -1077,7 +1071,7 @@
       alert('已刪除選取的項目');
     });
 
-    // 修改自動備份函數
+    // 自動備份
     function autoBackupAndExport() {
       const now = new Date();
       const lastBackupMonth = localStorage.getItem('lastBackupMonth');
@@ -1119,7 +1113,7 @@
       }
     }
 
-    // 修改網頁載入事件
+    // 網頁載入事件
     window.addEventListener('load', () => {
       console.log('初始化自動備份系統...');
 
