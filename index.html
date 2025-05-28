@@ -133,30 +133,91 @@
       box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
     }
 
-    #monthSelect,
-    #roleFilter {
+    #roleFilter,
+    #searchInput {
       max-width: 120px;
-      margin: 0 16px 16px;
-      display: block;
+      margin: 0 8px;
       padding: 8px 12px;
       font-size: 1rem;
       border-radius: 4px;
       border: 1.5px solid #ddd;
-      cursor: pointer;
       transition: border-color 0.3s ease;
     }
 
-    #monthSelect:hover,
-    #monthSelect:focus {
+
+    #roleFilter:hover,
+    #roleFilter:focus,
+    #searchInput:hover,
+    #searchInput:focus {
       border-color: #0077cc;
       outline: none;
     }
 
-    #roleFilter:hover,
-    #roleFilter:focus {
-      border-color: #0077cc;
-      outline: none;
+    #searchInput {
+      width: 150px;
+      /* 搜尋框可以稍微寬一點 */
     }
+
+
+    #importBtn:hover,
+    #exportAllBtn:hover,
+    #exportCurrentBtn:hover {
+      background-color: #024d83 !important;
+    }
+
+    .recordCheckbox,
+    #selectAll {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    #batchDeleteBtn:hover {
+      background-color: #992600 !important;
+    }
+
+    .chartTypeBtn {
+      opacity: 0.9;
+      transition: all 0.3s ease;
+    }
+
+    .chartTypeBtn:hover {
+      opacity: 1;
+    }
+
+    .chartTypeBtn.active {
+      background-color: #024d83 !important;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .editBtn {
+      background-color: #0077cc;
+      border: none;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background-color 0.3s ease;
+    }
+
+    .editBtn:hover {
+      background-color: #005fa3;
+    }
+
+    #addRecord,
+    #cancelEdit {
+      padding: 8px 16px;
+      font-size: 1rem;
+      min-width: 120px;
+      transition: all 0.3s ease;
+    }
+
+    #cancelEdit:hover {
+      background-color: #4d4d4d !important;
+    }
+
+
 
     @media (max-width: 600px) {
       form {
@@ -206,7 +267,7 @@
       <input type="number" id="total" readonly />
     </div>
     <div class="mb-3">
-      <label for="orderType" class="form-label">訂單種類</label>
+      <label for="orderType" class="form-label">訂單類型</label>
       <select class="form-select" id="orderType">
         <option value=""></option>
         <option value="蝦皮">蝦皮</option>
@@ -221,24 +282,37 @@
       <label for="note" class="form-label">備註</label>
       <textarea class="form-control" id="note" rows="2"></textarea>
     </div>
-    <div style="align-self: flex-end;">
-      <button id="addRecord" type="submit">新增記錄</button>
+    <div style="display:flex; gap: 8px;">
+      <button id="addRecord" type="submit" style="min-width: 120px;">新增記錄</button>
+      <button id="cancelEdit" type="button" style="display: none; background-color: #666; min-width: 120px;">取消</button>
     </div>
   </form>
 
-  <div style="max-width:960px; margin: 0 auto 16px; display:flex;">
-    <label for="monthSelect" style="font-weight:600; color:#004d99;">選擇月份：</label>
-    <select id="monthSelect"></select>
-    <select id="roleFilter">
+  <div style="max-width:960px; margin: 0 auto 16px; display:flex; align-items:center;">
+    <label style="font-weight:600; color:#004d99;">日期區間：</label>
+    <input type="date" id="startDate"
+      style="padding:8px 12px; border:1.5px solid #ddd; border-radius:4px; margin:0 8px;">
+    <span style="margin:0 8px;">至</span>
+    <input type="date" id="endDate" style="padding:8px 12px; border:1.5px solid #ddd; border-radius:4px; margin:0 8px;">
+    <select id="roleFilter"
+      style="max-width:120px; margin:0 8px; padding:8px 12px; font-size:1rem; border-radius:4px; border:1.5px solid #ddd; cursor:pointer;">
       <option value="all">全部</option>
       <option value="store">店家/賣家</option>
       <option value="buyer">買家</option>
     </select>
+    <div style="position:relative; display:flex; align-items:center;">
+      <input type="text" id="searchInput" placeholder="搜尋關鍵字..."
+        style="max-width:120px; margin:0 8px; padding:8px 12px; font-size:1rem; border-radius:4px; border:1.5px solid #ddd;">
+      <button id="searchHelpBtn"
+        style="background:none; border:none; color:#0077cc; font-weight:bold; cursor:pointer; padding:8px 4px; margin-left:-4px;"
+        title="點擊查看搜尋說明">?</button>
+    </div>
   </div>
 
   <table>
     <thead>
       <tr>
+        <th><input type="checkbox" id="selectAll"></th>
         <th>日期</th>
         <th>店家/賣家名稱</th>
         <th>買家ID名稱</th>
@@ -246,7 +320,7 @@
         <th>金額</th>
         <th>數量</th>
         <th>該筆總金額</th>
-        <th>訂單種類</th>
+        <th>訂單類型</th>
         <th>訂單編號</th>
         <th>備註</th>
         <th>操作</th>
@@ -264,6 +338,8 @@
 
   <div style="max-width: 960px; margin: 0 auto 24px;">
     <input type="file" id="importExcel" accept=".xlsx,.xls" style="margin-bottom: 12px;display: none;" />
+    <button id="batchDeleteBtn"
+      style="background:#cc3300; color:#fff; font-weight:700; padding: 10px 16px; border:none; border-radius:4px; cursor:pointer; margin-right: 8px;">刪除選取項目</button>
     <button id="importBtn"
       style="background:#0077cc; color:#fff; font-weight:700; padding: 10px 16px; border:none; border-radius:4px; cursor:pointer; margin-right: 8px;">選擇檔案</button>
     <button id="exportAllBtn"
@@ -273,14 +349,24 @@
   </div>
 
   <div id="chartContainer">
+    <div style="margin-bottom: 16px;">
+      <button id="barChartBtn" class="chartTypeBtn active"
+        style="background:#0077cc; color:#fff; font-weight:700; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer; margin-right: 8px;">長條圖</button>
+      <button id="stackedBarChartBtn" class="chartTypeBtn"
+        style="background:#0077cc; color:#fff; font-weight:700; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer; margin-right: 8px;">堆疊長條圖</button>
+      <button id="pieChartBtn" class="chartTypeBtn"
+        style="background:#0077cc; color:#fff; font-weight:700; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer; margin-right: 8px;">圓餅圖</button>
+      <button id="lineChartBtn" class="chartTypeBtn"
+        style="background:#0077cc; color:#fff; font-weight:700; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer;">折線圖</button>
+    </div>
     <canvas id="dailyChart"></canvas>
   </div>
 
   <script>
     const recordsKey = 'records';
     let records = JSON.parse(localStorage.getItem(recordsKey)) || [];
-    let currentMonth = new Date().toISOString().slice(0, 7);
-    const monthSelect = document.getElementById('monthSelect');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
     const tableBody = document.getElementById('recordTableBody');
     const footerTotal = document.getElementById('footerTotal');
     const importInput = document.getElementById('importExcel');
@@ -297,8 +383,15 @@
     const addBtn = document.getElementById('addRecord');
     const importBtn = document.getElementById('importBtn');
     const roleFilter = document.getElementById('roleFilter');
+    const searchInput = document.getElementById('searchInput');
+    const searchHelpBtn = document.getElementById('searchHelpBtn');
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+    const cancelEditBtn = document.getElementById('cancelEdit');
     let currentRole = 'all'; // 預設全部
+    let currentChartType = 'bar'; // 預設為長條圖
     let chart = null;
+    let editingIndex = -1; // 新增變數追蹤正在編輯的記錄索引
 
     // 計算該筆總金額
     function updateTotal() {
@@ -319,66 +412,113 @@
 
 
     // 產生月份選單 (過去一年，含當月)
-    function generateMonthOptions() {
+    function initializeDateRange() {
+      // 設定預設日期範圍（當月第一天到最後一天）
       const now = new Date();
-      const months = [];
-      monthSelect.innerHTML = ''; // 清空原先選項
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-      for (let i = 0; i < 12; i++) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0'); // 月份補零
-        const ym = `${year}-${month}`;
-        months.push(ym);
-      }
-
-      months.forEach(ym => {
-        const opt = document.createElement('option');
-        opt.value = ym;
-        opt.textContent = ym;
-        if (ym === currentMonth) opt.selected = true;
-        monthSelect.appendChild(opt);
-      });
+      startDateInput.value = firstDay.toISOString().slice(0, 10);
+      endDateInput.value = lastDay.toISOString().slice(0, 10);
     }
 
-    // 顯示該月資料
-    function renderTable(month) {
-      tableBody.innerHTML = '';
-      // 先以月份過濾
-      let filtered = records.filter(r => typeof r.date === 'string' && r.date.startsWith(month));
 
-      // 再依照角色篩選
+    // 顯示該月資料
+    function renderTable() {
+      tableBody.innerHTML = '';
+      const startDate = startDateInput.value;
+      const endDate = endDateInput.value;
+      const searchText = searchInput.value.toLowerCase().trim();
+
+      // 使用日期範圍過濾
+      let filtered = records.filter(r => {
+        return r.date >= startDate && r.date <= endDate;
+      });
+
+      // 依照角色篩選
       if (currentRole === 'buyer') {
         filtered = filtered.filter(r => r.buyer && r.buyer.trim() !== '');
       } else if (currentRole === 'store') {
         filtered = filtered.filter(r => r.store && r.store.trim() !== '');
       }
 
+      // 搜尋關鍵字過濾
+      if (searchText) {
+        filtered = filtered.filter(r => {
+          return (
+            (r.store && r.store.toLowerCase().includes(searchText)) ||
+            (r.buyer && r.buyer.toLowerCase().includes(searchText)) ||
+            (r.productName && r.productName.toLowerCase().includes(searchText)) ||
+            (r.orderType && r.orderType.toLowerCase().includes(searchText)) ||
+            (r.orderNumber && r.orderNumber.toLowerCase().includes(searchText)) ||
+            (r.note && r.note.toLowerCase().includes(searchText))
+          );
+        });
+      }
+
+      // 依日期排序
+      filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+
       let sum = 0;
-      filtered.forEach((rec, idx) => {
+      filtered.forEach(rec => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-      <td>${rec.date}</td>
-      <td>${rec.store || ''}</td>
-      <td>${rec.buyer || ''}</td>
-      <td>${rec.productName || ''}</td>
-      <td>${rec.amount}</td>
-      <td>${rec.quantity}</td>
-      <td>${rec.total}</td>
-      <td>${rec.orderType}</td>
-      <td>${rec.orderNumber}</td>
-      <td>${rec.note}</td>
-      <td><button class="deleteBtn" data-index="${records.indexOf(rec)}">刪除</button></td>
-    `;
+        <td><input type="checkbox" class="recordCheckbox" data-index="${records.indexOf(rec)}"></td>
+        <td>${rec.date}</td>
+        <td>${rec.store || ''}</td>
+        <td>${rec.buyer || ''}</td>
+        <td>${rec.productName || ''}</td>
+        <td>${rec.amount}</td>
+        <td>${rec.quantity}</td>
+        <td>${rec.total}</td>
+        <td>${rec.orderType}</td>
+        <td>${rec.orderNumber}</td>
+        <td>${rec.note}</td>
+        <td>
+          <button class="editBtn" data-index="${records.indexOf(rec)}" style="background-color: #0077cc; margin-right: 4px;">編輯</button>
+          <button class="deleteBtn" data-index="${records.indexOf(rec)}">刪除</button>
+        </td>
+      `;
         tableBody.appendChild(tr);
         sum += rec.total;
       });
-      footerTotal.textContent = sum;
-      renderChart(filtered, month);
+
+      footerTotal.textContent = sum + '$';
+      renderChart(filtered);
+    }
+
+    // 新增編輯函數
+    function editRecord(index) {
+      editingIndex = index;
+      const record = records[index];
+
+      // 填入表單資料
+      dateInput.value = record.date;
+      storeInput.value = record.store || '';
+      buyerInput.value = record.buyer || '';
+      amountInput.value = record.amount;
+      quantityInput.value = record.quantity;
+      totalInput.value = record.total;
+      productNameInput.value = record.productName || '';
+      orderTypeInput.value = record.orderType || '';
+      orderNumberInput.value = record.orderNumber || '';
+      noteInput.value = record.note || '';
+
+      // 更新表單狀態
+      validateInputs();
+
+      // 修改按鈕狀態
+      addBtn.textContent = '儲存修改';
+      cancelEditBtn.style.display = 'block';
+
+      // 捲動到表單區域
+      document.querySelector('form').scrollIntoView({ behavior: 'smooth' });
     }
 
 
+
     // 新增記錄
+    // 修改 addRecord 函數
     function addRecord() {
       const date = dateInput.value;
       const store = storeInput.value.trim();
@@ -386,17 +526,17 @@
       const amount = parseFloat(amountInput.value);
       const quantity = parseInt(quantityInput.value);
       const total = amount * quantity;
-      const productName = productNameInput.value
-      const orderType = orderTypeInput.value
-      const orderNumber = orderNumberInput.value
-      const note = noteInput.value
+      const productName = productNameInput.value;
+      const orderType = orderTypeInput.value;
+      const orderNumber = orderNumberInput.value;
+      const note = noteInput.value;
 
+      // 驗證
       if (!date) {
         alert('請填寫日期');
         return;
       }
 
-      // 新增買家/賣家驗證
       if ((!store && !buyer) || (store && buyer)) {
         alert('請填寫買家或賣家其中一個欄位（不可同時填寫或同時空白）');
         return;
@@ -410,14 +550,30 @@
         alert('請填寫正確數量');
         return;
       }
-      const newRec = { date, store, buyer, productName, amount, quantity, total, orderType, orderNumber, note };
-      records.push(newRec);
+
+      const newRecord = {
+        date, store, buyer, productName,
+        amount, quantity, total,
+        orderType, orderNumber, note
+      };
+
+      if (editingIndex >= 0) {
+        // 更新現有記錄
+        records[editingIndex] = newRecord;
+        editingIndex = -1;
+        addBtn.textContent = '新增記錄';
+        alert('修改成功');
+      } else {
+        // 新增記錄
+        records.push(newRecord);
+        alert('新增記錄成功');
+      }
+
       saveRecords();
       clearForm();
-      currentMonth = date.slice(0, 7);
-      monthSelect.value = currentMonth;
-      renderTable(currentMonth);
+      renderTable();
     }
+
 
     // 新增即時驗證功能
     function validateInputs() {
@@ -443,14 +599,22 @@
 
     // 刪除記錄
     function deleteRecord(index) {
+      // 檢查是否正在編輯該筆資料
+      if (editingIndex === index) {
+        alert('此筆資料正在編輯中，請先完成編輯或取消編輯後再刪除');
+        return;
+      }
+
       if (!confirm('確定要刪除此筆記錄？')) return;
+
       records.splice(index, 1);
       saveRecords();
-      renderTable(currentMonth);
+      renderTable();
     }
 
     // 清空表單
     function clearForm() {
+      // 清空所有輸入值
       dateInput.value = '';
       storeInput.value = '';
       buyerInput.value = '';
@@ -461,6 +625,29 @@
       orderTypeInput.value = '';
       orderNumberInput.value = '';
       noteInput.value = '';
+
+      // 重置輸入框狀態
+      storeInput.disabled = false;
+      buyerInput.disabled = false;
+      storeInput.placeholder = "選填";
+      buyerInput.placeholder = "選填";
+
+      // 重置編輯狀態
+      editingIndex = -1;
+      addBtn.textContent = '新增記錄';
+
+      // 如果是從編輯狀態取消
+      if (editingIndex >= 0) {
+        editingIndex = -1;
+        addBtn.textContent = '新增記錄';
+        // 可以加入取消編輯的提示
+        alert('已取消編輯');
+      }
+
+      // 重置編輯狀態
+      editingIndex = -1;
+      addBtn.textContent = '新增記錄';
+      cancelEditBtn.style.display = 'none';
     }
 
     // 儲存至 localStorage
@@ -470,7 +657,7 @@
       autoBackupAndExport();
     }
     // 匯入 Excel 檔案
-    // 匯入 Excel 檔案
+    // 修改匯入部分的程式碼
     importInput.addEventListener('change', e => {
       const file = e.target.files[0];
       if (!file) return;
@@ -479,16 +666,22 @@
       reader.onload = e => {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const importedData = XLSX.utils.sheet_to_json(worksheet);
 
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
+        let successCount = 0;
+        let updateCount = 0;
+        let errorCount = 0;
 
-        // 解析 Excel 內容，取得 JSON 陣列
-        const importedData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+        // 創建複合識別碼索引
+        const recordIndex = {};
+        records.forEach((record, index) => {
+          // 使用多欄位組合建立識別碼
+          const key = createRecordKey(record);
+          recordIndex[key] = index;
+        });
 
-        // 將匯入資料轉成符合 records 格式
         importedData.forEach(item => {
-          // 注意欄位名稱需對應你的 Excel 結構
           const date = item['日期'] || '';
           const store = item['店家/賣家名稱'] || '';
           const buyer = item['買家ID名稱'] || '';
@@ -496,44 +689,92 @@
           const amount = parseFloat(item['金額']) || 0;
           const quantity = parseInt(item['數量']) || 0;
           const total = parseFloat(item['該筆總金額']) || (amount * quantity);
-          const orderType = item['訂單種類'] || '';
+          const orderType = item['訂單類型'] || '';
           const orderNumber = item['訂單編號'] || '';
           const note = item['備註'] || '';
 
-          if (date) {
-            records.push({ date, store, buyer, productName, amount, quantity, total, orderType, orderNumber, note });
+          // 驗證必要資料
+          if (date && (store || buyer) && amount > 0 && quantity > 0) {
+            const newRecord = {
+              date, store, buyer, productName,
+              amount, quantity, total,
+              orderType, orderNumber, note
+            };
+
+            // 使用複合識別碼檢查是否存在相同記錄
+            const key = createRecordKey(newRecord);
+
+            if (key in recordIndex) {
+              // 更新現有記錄
+              records[recordIndex[key]] = newRecord;
+              updateCount++;
+            } else {
+              // 新增記錄
+              records.push(newRecord);
+              recordIndex[key] = records.length - 1;
+              successCount++;
+            }
+          } else {
+            errorCount++;
           }
         });
 
         saveRecords();
-        currentMonth = monthSelect.value || new Date().toISOString().slice(0, 7);
-        renderTable(currentMonth);
+        renderTable();
 
-        alert('匯入完成！');
-        importInput.value = ''; // 清空檔案欄位
+        alert(`匯入完成！
+新增筆數：${successCount}
+更新筆數：${updateCount}
+失敗筆數：${errorCount}`);
+
+        importInput.value = '';
       };
 
       reader.readAsArrayBuffer(file);
     });
+
+    // 新增複合識別碼生成函數
+    function createRecordKey(record) {
+      // 可以自訂組合多個欄位作為識別碼
+      const keyParts = [
+        record.date,
+        record.store || '',
+        record.buyer || '',
+        record.productName || '',
+        record.amount.toString(),
+        record.quantity.toString(),
+        record.orderNumber || ''
+      ];
+
+      // 移除空值並轉為小寫
+      return keyParts
+        .filter(part => part !== '')
+        .join('_')
+        .toLowerCase();
+    }
     // 匯出 Excel 檔案
-    // 匯出函式
     function exportRecords(data, fileName) {
       if (data.length === 0) {
         alert('目前沒有記錄可匯出');
         return;
       }
 
-      const exportData = data.map(item => ({
+      // 複製資料並依照日期排序
+      const sortedData = [...data].sort((a, b) => {
+        return new Date(a.date) - new Date(b.date);
+      });
+
+      const exportData = sortedData.map(item => ({
         '日期': item.date,
         '店家/賣家名稱': item.store,
         '買家ID名稱': item.buyer,
-        '商品名稱': item.productName || '',      // 新增欄位
+        '商品名稱': item.productName || '',
         '金額': item.amount,
         '數量': item.quantity,
         '該筆總金額': item.total,
-        '訂單類型': item.orderType || '',        // 新增欄位
-        '訂單編號': item.orderNumber || '',      // 新增欄位
-        '備註': item.note || '',                  // 新增欄位
+        '訂單類型': item.orderType || '',
+        '訂單編號': item.orderNumber || '',
+        '備註': item.note || '',
       }));
 
       const ws = XLSX.utils.json_to_sheet(exportData, {
@@ -542,8 +783,15 @@
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, '記帳資料');
       XLSX.writeFile(wb, fileName);
-      alert('成功匯出')
+      alert('成功匯出');
     }
+
+    // 新增取消按鈕事件監聽
+    cancelEditBtn.addEventListener('click', () => {
+      clearForm();
+      cancelEditBtn.style.display = 'none';
+    });
+
 
     // 兩個按鈕事件
     document.getElementById('exportAllBtn').addEventListener('click', () => {
@@ -556,111 +804,345 @@
       exportRecords(dataToExport, '所有月份記帳資料.xlsx');
     });
 
+    // 修改匯出按鈕文字和事件處理
+    document.getElementById('exportCurrentBtn').textContent = '匯出當前區間資料';
+
     document.getElementById('exportCurrentBtn').addEventListener('click', () => {
-      let filtered = records.filter(r => typeof r.date === 'string' && r.date.startsWith(currentMonth));
+      const startDate = startDateInput.value;
+      const endDate = endDateInput.value;
+      let filtered = records.filter(r => r.date >= startDate && r.date <= endDate);
+
       if (currentRole === 'buyer') {
         filtered = filtered.filter(r => r.buyer && r.buyer.trim() !== '');
       } else if (currentRole === 'store') {
         filtered = filtered.filter(r => r.store && r.store.trim() !== '');
       }
-      exportRecords(filtered, `${currentMonth} 記帳資料.xlsx`);
+
+      exportRecords(filtered, `記帳資料_${startDate}_${endDate}.xlsx`);
     });
     // 繪製圖表
-    function renderChart(filteredRecords, month) {
+    function renderChart(filteredRecords) {
       const ctx = document.getElementById('dailyChart').getContext('2d');
-
-      // 依日期彙總總金額
-      const dailyTotals = {};
-      filteredRecords.forEach(rec => {
-        dailyTotals[rec.date] = (dailyTotals[rec.date] || 0) + rec.total;
-      });
-
-      // 按日期排序
-      const labels = Object.keys(dailyTotals).sort();
-      const data = labels.map(date => dailyTotals[date]);
+      const startDate = startDateInput.value;
+      const endDate = endDateInput.value;
 
       if (chart) chart.destroy();
 
-      chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [{
-            label: `${month} 每日總金額`,
-            data,
-            backgroundColor: 'rgba(0, 119, 204, 0.6)'
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: {
-              beginAtZero: true
+      if (currentChartType === 'stackedBar') {
+        // 依照訂單類型分類統計
+        const typeGroups = {};
+        filteredRecords.forEach(rec => {
+          const date = rec.date;
+          const type = rec.orderType || '其他';
+          if (!typeGroups[type]) {
+            typeGroups[type] = {};
+          }
+          if (!typeGroups[type][date]) {
+            typeGroups[type][date] = 0;
+          }
+          typeGroups[type][date] += rec.total;
+        });
+
+        const labels = [...new Set(filteredRecords.map(r => r.date))].sort();
+        const datasets = Object.keys(typeGroups).map(type => ({
+          label: type,
+          data: labels.map(date => typeGroups[type][date] || 0),
+          backgroundColor: `hsl(${Math.random() * 360}, 70%, 50%)`
+        }));
+
+        chartConfig = {
+          type: 'bar',
+          data: {
+            labels,
+            datasets
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: {
+                stacked: true,
+              },
+              y: {
+                stacked: true,
+                beginAtZero: true,
+                ticks: {
+                  callback: value => `$${value}`
+                }
+              }
+            },
+            plugins: {
+              title: {
+                display: true,
+                text: `訂單類型金額分布 (${startDate} 至 ${endDate})`,
+                font: {
+                  size: 16,
+                  weight: 'bold'
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    const typeLabel = context.dataset.label;
+                    const value = context.raw;
+                    return `${typeLabel}: $${value}`;
+                  }
+                }
+              }
             }
           }
-        }
-      });
+        };
+      } else {
+        const dailyTotals = {};
+        filteredRecords.forEach(rec => {
+          dailyTotals[rec.date] = (dailyTotals[rec.date] || 0) + rec.total;
+        });
+
+        const labels = Object.keys(dailyTotals).sort();
+        const data = labels.map(date => dailyTotals[date]);
+
+        chartConfig = {
+          type: currentChartType,
+          data: {
+            labels,
+            datasets: [{
+              label: `${startDate} 至 ${endDate} 每日總金額`,
+              data,
+              backgroundColor: currentChartType === 'pie'
+                ? labels.map(() => `hsl(${Math.random() * 360}, 70%, 50%)`)
+                : 'rgba(0, 119, 204, 0.6)',
+              borderColor: currentChartType === 'line'
+                ? 'rgba(0, 119, 204, 1)'
+                : undefined,
+              borderWidth: currentChartType === 'line' ? 2 : 1,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: `日期區間：${startDate} 至 ${endDate}`,
+                font: {
+                  size: 16,
+                  weight: 'bold'
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    let label = context.label || '';
+                    let value = context.raw || 0;
+                    if (currentChartType === 'pie') {
+                      const total = data.reduce((a, b) => a + b, 0);
+                      const percentage = ((value / total) * 100).toFixed(1);
+                      return `${label}: $${value} (${percentage}%)`;
+                    }
+                    return `${label}: $${value}`;
+                  }
+                }
+              }
+            },
+            scales: currentChartType !== 'pie' ? {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: value => `$${value}`
+                }
+              }
+            } : undefined
+          }
+        };
+      }
+
+      chart = new Chart(ctx, chartConfig);
     }
 
+    // 新增圖表切換按鈕事件監聽
+    document.querySelectorAll('.chartTypeBtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // 更新按鈕樣式
+        document.querySelectorAll('.chartTypeBtn').forEach(b => {
+          b.style.backgroundColor = '#0077cc';
+          b.classList.remove('active');
+        });
+        btn.style.backgroundColor = '#024d83';
+        btn.classList.add('active');
+
+        // 設定圖表類型
+        if (btn.id === 'pieChartBtn') {
+          currentChartType = 'pie';
+        } else if (btn.id === 'lineChartBtn') {
+          currentChartType = 'line';
+        } else if (btn.id === 'stackedBarChartBtn') {
+          currentChartType = 'stackedBar';
+        } else {
+          currentChartType = 'bar';
+        }
+
+        // 重新渲染圖表
+        renderTable();
+      });
+    });
     // 初始化
-    generateMonthOptions();
-    renderTable(currentMonth);
+    initializeDateRange();
+    renderTable();
 
     // 事件綁定
     addBtn.addEventListener('click', addRecord);
-    monthSelect.addEventListener('change', e => {
-      currentMonth = e.target.value;
-      renderTable(currentMonth);
-    });
+    // 新增事件監聽器
+    startDateInput.addEventListener('change', renderTable);
+    endDateInput.addEventListener('change', renderTable);
+
     tableBody.addEventListener('click', e => {
       if (e.target.classList.contains('deleteBtn')) {
         const idx = parseInt(e.target.dataset.index);
         deleteRecord(idx);
+      } else if (e.target.classList.contains('editBtn')) {
+        const idx = parseInt(e.target.dataset.index);
+        editRecord(idx);
       }
     });
     roleFilter.addEventListener('change', e => {
       currentRole = e.target.value;
-      renderTable(currentMonth);
+      renderTable();
     });
     storeInput.addEventListener('input', validateInputs);
     buyerInput.addEventListener('input', validateInputs);
+    searchInput.addEventListener('input', renderTable);
 
-    // 自動備份函數
+    searchHelpBtn.addEventListener('click', () => {
+      const helpMessage = `搜尋功能說明：
+  
+    1. 日期區間：
+      - 開始日期到結束日期的範圍內搜尋
+      - 可隨時調整日期範圍
+
+    2. 支援搜尋欄位：
+      - 店家/賣家名稱
+      - 買家ID名稱
+      - 商品名稱
+      - 訂單類型
+      - 訂單編號
+      - 備註
+
+    3. 搜尋特點：
+      - 即時搜尋，輸入即顯示結果
+      - 不分大小寫
+      - 可搜尋部分文字
+      - 可與角色篩選同時使用
+
+    4. 角色篩選：
+      - 全部
+      - 只顯示店家/賣家
+      - 只顯示買家`;
+
+      alert(helpMessage);
+    });
+
+    // 全選功能
+    selectAllCheckbox.addEventListener('change', () => {
+      const checkboxes = document.querySelectorAll('.recordCheckbox');
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+      });
+    });
+
+    // 批次刪除功能
+    batchDeleteBtn.addEventListener('click', () => {
+      const selectedCheckboxes = document.querySelectorAll('.recordCheckbox:checked');
+
+      if (selectedCheckboxes.length === 0) {
+        alert('請選擇要刪除的項目');
+        return;
+      }
+
+      if (!confirm(`確定要刪除選取的 ${selectedCheckboxes.length} 筆記錄？`)) {
+        return;
+      }
+
+      // 收集要刪除的索引
+      const indexesToDelete = Array.from(selectedCheckboxes)
+        .map(checkbox => parseInt(checkbox.dataset.index))
+        .sort((a, b) => b - a); // 從大到小排序，以避免刪除時索引變化
+
+      // 依序刪除
+      indexesToDelete.forEach(index => {
+        records.splice(index, 1);
+      });
+
+      saveRecords();
+      renderTable();
+      selectAllCheckbox.checked = false;
+      alert('已刪除選取的項目');
+    });
+
+    // 修改自動備份函數
     function autoBackupAndExport() {
       const now = new Date();
       const lastBackupMonth = localStorage.getItem('lastBackupMonth');
       const currentMonth = now.toISOString().slice(0, 7);  // 格式: YYYY-MM
 
-      // 檢查是否需要本月備份
-      if (lastBackupMonth !== currentMonth) {
-        // 建立備份檔名
-        const fileName = `記帳備份_${currentMonth}.xlsx`;
+      try {
+        if (!lastBackupMonth && records && records.length > 0) {
+          // 如果從未備份過，執行第一次備份
+          console.log('偵測到首次使用，執行初始備份...');
+          const sortedRecords = [...records].sort((a, b) =>
+            new Date(a.date) - new Date(b.date)
+          );
+          const fileName = `完整記帳備份_${currentMonth}.xlsx`;
+          exportRecords(sortedRecords, fileName);
+          localStorage.setItem('lastBackupMonth', currentMonth);
+          console.log(`首次備份完成：${currentMonth}`);
+        } else if (lastBackupMonth) {
+          // 計算上次備份至今是否已滿一個月
+          const lastBackup = new Date(lastBackupMonth + '-01'); // 轉換為日期對象
+          const monthDiff = (now.getFullYear() - lastBackup.getFullYear()) * 12 +
+            (now.getMonth() - lastBackup.getMonth());
 
-        // 檢查是否有資料需要備份
-        if (records && records.length > 0) {
-          try {
-            exportRecords(records, fileName);
-            console.log(`${currentMonth} 月份備份完成`);
-            // 更新最後備份月份
+          if (monthDiff >= 1 && records && records.length > 0) {
+            console.log(`距離上次備份已滿 ${monthDiff} 個月，執行自動備份...`);
+            const sortedRecords = [...records].sort((a, b) =>
+              new Date(a.date) - new Date(b.date)
+            );
+            const fileName = `完整記帳備份_${currentMonth}.xlsx`;
+            exportRecords(sortedRecords, fileName);
             localStorage.setItem('lastBackupMonth', currentMonth);
-          } catch (error) {
-            console.error('月份備份失敗:', error);
+            console.log(`自動備份完成：${currentMonth}`);
+          } else {
+            console.log(`距離上次備份 ${lastBackupMonth} 未滿一個月，無需備份`);
           }
-        } else {
-          console.log('無資料需要備份');
         }
+      } catch (error) {
+        console.error('備份發生錯誤:', error);
+        alert('自動備份發生錯誤，請檢查系統紀錄');
       }
     }
 
     // 修改網頁載入事件
     window.addEventListener('load', () => {
+      console.log('初始化自動備份系統...');
+
+      // 確認是否有最後備份時間記錄
+      const lastBackupMonth = localStorage.getItem('lastBackupMonth');
+      if (!lastBackupMonth) {
+        console.log('未找到備份記錄，將執行首次備份...');
+      } else {
+        console.log(`上次備份時間：${lastBackupMonth}`);
+      }
+
       // 延遲 3 秒後執行第一次檢查
-      setTimeout(autoBackupAndExport, 3000);
+      setTimeout(() => {
+        console.log('執行備份檢查...');
+        autoBackupAndExport();
+      }, 3000);
 
-      // 每天檢查一次是否需要月份備份
-      setInterval(autoBackupAndExport, 24 * 60 * 60 * 1000);
+      // 設定每天檢查一次
+      setInterval(() => {
+        console.log('執行定期備份檢查...');
+        autoBackupAndExport();
+      }, 24 * 60 * 60 * 1000);
     });
-
 
   </script>
 
